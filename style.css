@@ -158,3 +158,57 @@ body {
   padding: 25px 0;
   margin-top: 30px;
 }
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section {
+  animation: fadeIn 0.8s ease-out;
+}
+
+/* Hover effect on cards */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(10, 40, 90, 0.12);
+}
+
+/* Metric box hover */
+.metric-box {
+  transition: transform 0.2s ease;
+}
+
+.metric-box:hover {
+  transform: scale(1.05);
+}
+
+/* Code block styling */
+pre {
+  border-left: 4px solid #0c5adb;
+}
+
+/* Details/summary styling */
+details summary {
+  transition: color 0.2s ease;
+}
+
+details summary:hover {
+  color: #0947ad;
+}
