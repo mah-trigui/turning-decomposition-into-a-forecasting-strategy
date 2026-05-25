@@ -1,4 +1,113 @@
-class="metric-box">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Turning Decomposition into a Forecasting Strategy</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <h1>Turning Decomposition into a Forecasting Strategy</h1>
+      <p class="subtitle">
+        Adaptive component-wise forecasting for weekly time series
+      </p>
+      <div class="hero-buttons">
+        <a href="https://github.com/ningistine7/turning-decomposition-into-a-forecasting-strategy" class="btn primary">View Repository</a>
+        <a href="#method" class="btn secondary">Explore Method</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <h2>Overview</h2>
+        <p>
+          This project presents a decomposition-first forecasting framework for weekly time series.
+          Instead of forecasting the raw signal directly, the pipeline generates multiple decompositions,
+          selects the one producing the most forecastable components, models each component with a specialized
+          method, and recombines the forecasts into a robust final prediction.
+        </p>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container">
+        <h2>Architecture</h2>
+        <img src="images/architecture.png" alt="Forecasting architecture diagram" class="architecture-image" />
+      </div>
+    </section>
+
+    <section class="section" id="method">
+      <div class="container">
+        <h2>Method</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>1. Multi-decomposition generation</h3>
+            <p>
+              The same weekly series is decomposed using multiple candidate methods
+              including STL, STL + classical decomposition, and AutoSTR.
+            </p>
+          </div>
+          <div class="card">
+            <h3>2. Component separation</h3>
+            <p>
+              Each decomposition is split into a seasonally adjusted component and
+              a seasonal component to create simpler forecasting sub-problems.
+            </p>
+          </div>
+          <div class="card">
+            <h3>3. Adaptive selection</h3>
+            <p>
+              The selected decomposition is the one minimizing the combined in-sample
+              residual error across adjusted and seasonal forecasts.
+            </p>
+          </div>
+          <div class="card">
+            <h3>4. Specialized forecasting</h3>
+            <p>
+              ARIMA with calendar and holiday regressors is used for the adjusted component,
+              while ETS-based models are used for the seasonal structure.
+            </p>
+          </div>
+          <div class="card">
+            <h3>5. Hybrid ensemble</h3>
+            <p>
+              The decomposition-based forecast is combined with Prophet and NNETAR
+              to capture complementary structural and nonlinear effects.
+            </p>
+          </div>
+          <div class="card">
+            <h3>6. Stabilization</h3>
+            <p>
+              A rolling median smoothing layer is applied across iterative forecasts
+              to improve robustness and reduce sensitivity to unstable predictions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container">
+        <h2>Why this approach</h2>
+        <ul class="clean-list">
+          <li>Reduces signal heterogeneity before forecasting</li>
+          <li>Matches each component to a more suitable model family</li>
+          <li>Treats decomposition as a forecasting decision layer</li>
+          <li>Improves robustness through cross-model aggregation</li>
+          <li>Stabilizes final predictions across rolling windows</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Results</h2>
+        <div class="metrics">
+          <div class="metric-box">
             <span class="metric-value">~4.2%</span>
             <span class="metric-label">Mean WMAPE (12-week sum)</span>
           </div>
