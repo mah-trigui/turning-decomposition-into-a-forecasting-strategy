@@ -8,7 +8,7 @@ A decomposition-first forecasting framework for weekly time series, based on ada
 
 Visit the full project page here:
 
-👉 **[Project Site](https://ningistine7.github.io/turning-decomposition-into-a-forecasting-strategy/)**
+👉 **[Project Site](https://mah-trigui.github.io/turning-decomposition-into-a-forecasting-strategy/)**
 
 ---
 
