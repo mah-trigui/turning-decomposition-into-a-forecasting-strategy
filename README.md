@@ -53,11 +53,11 @@ The key idea is to treat **decomposition as a forecasting strategy** rather than
 
 ## R Packages
 
--feasts
--fable
--fabletools
--stR
--forecast
+- feasts
+- fable
+- fabletools
+- stR
+- forecast
 
 ---
 
