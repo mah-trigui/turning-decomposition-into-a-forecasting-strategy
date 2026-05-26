@@ -43,12 +43,6 @@ The key idea is to treat **decomposition as a forecasting strategy** rather than
 
 ---
 
-## Results
-
-- **Mean WMAPE (12-week sum):** ~4.2%
-- **Max WMAPE:** ~8.3%
-- **Mean WMAPE (per week):** ~11.1%
-
 ---
 
 ## Public Scope
