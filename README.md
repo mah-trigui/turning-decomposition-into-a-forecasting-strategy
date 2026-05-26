@@ -33,8 +33,8 @@ The key idea is to treat **decomposition as a forecasting strategy** rather than
 
 ## Methods Used
 
-- **STL**
-- **STL + classical decomposition**
+- **STL (fable)**
+- **Classical decomposition**
 - **AutoSTR**
 - **ARIMA** with exogenous regressors
 - **ETS**
@@ -42,6 +42,22 @@ The key idea is to treat **decomposition as a forecasting strategy** rather than
 - **NNETAR**
 
 ---
+
+## Results
+
+- Mean WMAPE (12-week sum): ~4.2%
+- Max WMAPE: ~8.3%
+- Mean WMAPE (per week): ~11.1%
+
+---
+
+## R Packages
+
+-feasts
+-fable
+-fabletools
+-stR
+-forecast
 
 ---
 
