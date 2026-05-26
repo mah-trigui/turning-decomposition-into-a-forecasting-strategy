@@ -178,3 +178,169 @@
         </ul>
       </div>
     </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Results</h2>
+        <div class="metrics">
+          <div class="metric-box">
+            <span class="metric-value">~4.2%</span>
+            <span class="metric-label">Mean WMAPE (12-week sum)</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">~8.3%</span>
+            <span class="metric-label">Max WMAPE</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-value">~11.1%</span>
+            <span class="metric-label">Mean WMAPE (per week)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container">
+        <h2>The Idea Behind This Approach</h2>
+        <p>
+          In this forecasting work, I tried to solve a simple issue:
+        </p>
+        <p>
+          A raw weekly time series often mixes several dynamics at once — <strong>trend, seasonality, holiday effects, calendar distortions, and irregular noise</strong>.
+        </p>
+        <p>
+          Fitting one single model directly on the raw signal can work, but it also forces the model to explain very different behaviors at the same time.
+        </p>
+        
+        <h3 style="margin-top: 30px; color: #0c5adb;">So I used a different approach:</h3>
+        <ul class="clean-list">
+          <li>generate multiple decompositions of the series</li>
+          <li>split each decomposition into:
+            <ul style="margin-top: 8px;">
+              <li>a <strong>seasonally adjusted component</strong></li>
+              <li>a <strong>seasonal component</strong></li>
+            </ul>
+          </li>
+          <li>select the decomposition with the <strong>lowest combined residual error</strong></li>
+          <li>forecast each component with the model family best suited to its behavior</li>
+          <li>recombine everything into the final forecast</li>
+        </ul>
+
+        <h3 style="margin-top: 30px; color: #0c5adb;">In practice:</h3>
+        <ul class="clean-list">
+          <li>the <strong>adjusted component</strong> is modeled with <strong>ARIMA + calendar / holiday regressors</strong></li>
+          <li>the <strong>seasonal component</strong> is modeled separately with <strong>ETS-based specifications</strong></li>
+          <li>the resulting decomposition forecast is then combined with <strong>Prophet</strong> and <strong>NNETAR</strong></li>
+          <li>the final output is stabilized with a <strong>rolling median smoothing</strong> step across iterations</li>
+        </ul>
+
+        <p style="margin-top: 30px; font-style: italic; color: #3b5b8a; font-size: 1.05rem;">
+          What I like in this setup is that decomposition is no longer just a preprocessing step.
+          It becomes a <strong>modeling decision layer</strong>: the best decomposition is the one that creates the most predictable sub-signals.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>Selected Code Snippets</h2>
+        <p style="margin-bottom: 30px;">Below are key implementation excerpts from the forecasting pipeline.</p>
+
+        <h3 style="margin-top: 30px; color: #0c5adb;">1. STL Decomposition (fable)</h3>
+        <pre style="background: #f4f8fc; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; border-left: 4px solid #0c5adb;">
+decompose_stl_fable <- function(df_tsibble) {
+  cement_stl <- df_tsibble |>
+    model(stl = STL(y ~ season(window = 53), robust = FALSE))
+  
+  decomp_results <- cement_stl |>
+    fabletools::components()
+  
+  df_adjusted <- df_tsibble
+  df_adjusted$y <- decomp_results$season_adjust
+  df_adjusted$s <- decomp_results$season_year
+  
+  return(df_adjusted)
+}
+        </pre>
+
+        <h3 style="margin-top: 30px; color: #0c5adb;">2. Decomposition Selection Logic</h3>
+        <pre style="background: #f4f8fc; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; border-left: 4px solid #0c5adb;">
+# Compare combined residuals
+total_stat <- res_stat_adj + res_stat_s
+total_stl  <- res_stl_adj + res_stl_s
+total_str  <- res_str_adj + res_str_s
+
+# Select the best decomposition
+if (min(total_stat, total_stl, total_str) == total_stat) {
+  return(list(best = "STAT", df = df_adjusted_stat))
+} else if (min(total_stat, total_stl, total_str) == total_stl) {
+  return(list(best = "STL", df = df_adjusted_stl))
+} else {
+  return(list(best = "STR", df = df_adjusted_str))
+}
+        </pre>
+
+        <h3 style="margin-top: 30px; color: #0c5adb;">3. Component Forecasting (ARIMA Ensemble)</h3>
+        <pre style="background: #f4f8fc; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; border-left: 4px solid #0c5adb;">
+fc_adjusted <- df_adjusted_best %>%
+  model(
+    arima_1 = spec_adjusted_1,
+    arima_2 = spec_adjusted_2
+  ) %>%
+  forecast(h = "12 weeks", new_data = future_data) %>%
+  summarise(
+    y = distributional::dist_mixture(y[1], y[2], 
+                                     weights = c(0.5, 0.5))
+  )
+        </pre>
+
+        <h3 style="margin-top: 30px; color: #0c5adb;">4. Component Recombination</h3>
+        <pre style="background: #f4f8fc; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; border-left: 4px solid #0c5adb;">
+adjusted_point <- fc_decomp_adjusted %>%
+  mutate(point = median(y)) %>%
+  pull(point)
+
+seasonal_point <- fc_decomp_seasonal %>%
+  mutate(point = median(y)) %>%
+  pull(point)
+
+decomp_forecast <- adjusted_point + seasonal_point
+        </pre>
+
+        <h3 style="margin-top: 30px; color: #0c5adb;">5. Final Aggregation</h3>
+        <pre style="background: #f4f8fc; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; border-left: 4px solid #0c5adb;">
+final_forecast <- (decomp_forecast + 
+                   prophet_forecast + 
+                   nnetar_forecast) / 3
+
+final_forecast <- pmax(final_forecast, 0)
+        </pre>
+
+        <h3 style="margin-top: 30px; color: #0c5adb;">6. Rolling Median Stabilization</h3>
+        <pre style="background: #f4f8fc; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; border-left: 4px solid #0c5adb;">
+for (row in col:(nrow(predicted_values) - 1)) {
+  values <- unlist(predicted_values[row, 1:col])
+  averages[row] <- median(values, na.rm = TRUE)
+}
+        </pre>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container">
+        <h2>Public Repository Scope</h2>
+        <p>
+          This public version focuses on the methodology, architecture, and selected implementation snippets.
+          It is intentionally designed as a project showcase rather than a full production release.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Built as a public project showcase for time series forecasting methodology.</p>
+    </div>
+  </footer>
+</body>
+</html>
